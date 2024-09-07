@@ -3,20 +3,18 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize, DataTypes, where } = require('sequelize');
 const bcrypt = require('bcrypt');
 
 
-// Numero de rounds de salt para o bcrypt
 const saltRounds = 10;
 
-// Configuração do banco de dados
 const sequelize = new Sequelize('gerenciamento_propriedades', 'postgres', 'admin', {
   host: '127.0.0.1',
   dialect: 'postgres'
 });
 
-// Definição do modelo Usuario
+
 const Usuario = sequelize.define('Usuarios', {
   email: {
     type: DataTypes.STRING,
@@ -27,8 +25,6 @@ const Usuario = sequelize.define('Usuarios', {
       isEmail: { msg: 'O campo email deve ser um endereço de email válido' }
     }
   },
-
-
 
   senha: {
     type: DataTypes.STRING,
@@ -43,8 +39,14 @@ const Usuario = sequelize.define('Usuarios', {
 }
 );
 
-// Definição do modelo Propriedade
-const Propriedade = sequelize.define('propriedades', {
+const Propriedade = sequelize.define('Propriedades', {
+  id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    primaryKey: true,
+    autoIncrement: true
+
+  },
   endereco: {
     type: DataTypes.STRING,
     allowNull: false
@@ -117,7 +119,7 @@ app.post('/createUser', async (req, res) => {
     const verifyEmail = await Usuario.findOne({where: {email}})
 
     if (verifyEmail){
-      return res.status(401).json({error: 'Email já cadastrado'});
+      return res.status(409).json({error: 'Email já cadastrado'});
     }
 
     await Usuario.create({
@@ -145,13 +147,11 @@ app.post('/createUser', async (req, res) => {
 // });
 
 
+
+
 // Rota de login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
-
-
-  console.log(email)
-  console.log(senha)
 
   try {
     const usuario = await Usuario.findOne({ where: { email } });
@@ -189,6 +189,53 @@ app.get('/propriedades', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+app.delete('/propriedades/:id', async(req, res) => {
+  const {id} = req.params;
+
+  try{
+
+    const propriedadeId = parseInt(id, 10);
+
+    if(isNaN(propriedadeId)){
+      return res.status(400).json({ message: 'ID inválido' })
+    }
+
+    const result = await Propriedade.destroy({
+      where: { id: propriedadeId }
+    })
+
+    if(result){
+      res.status(200).json({message: 'Propriedade deletada com sucesso'});
+    }else {
+      res.status(404).json({message: 'Propriedade não encontrada'})
+    }
+  }catch(error){
+    console.error('Erro ao deletar propriedade: ', error);
+    res.status(500).json({message: 'Erro ao deletar a propriedade'})
+  }
+
+})
+
+
+// Rota para adicionar uma nova propriedade
+
+// app.post('/propriedade', async (req, res) => {
+//   const {endereco, tipo, fotos, descricao,status,price} = req.body;
+
+
+//   try{
+
+//     const propriedade = await Propriedade.create({
+      
+//     })
+
+//   }
+
+
+
+
+// })
 
 
 
