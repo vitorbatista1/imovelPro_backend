@@ -127,7 +127,6 @@ app.post('/createUser', async (req, res) => {
       email,
       senha: senhaCriptografada
     });
-    console.log("Usuario criado com sucesso!");
     res.json({ nome, email});
   } catch(error){
     console.error('erro ao crair usuario', error);
@@ -155,7 +154,6 @@ app.post('/login', async (req, res) => {
 
   try {
     const usuario = await Usuario.findOne({ where: { email } });
-    console.log(usuario)
 
     if (!usuario) {
       return res.status(401).json({ error: 'Usuário não encontrado' });
@@ -167,8 +165,6 @@ app.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: usuario.id }, 'seu_segredo', { expiresIn: '1h' });
-
-    console.log('Token gerado:', token);
     res.json({ token, nome: usuario.nome});
   } catch (error) {
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -178,11 +174,8 @@ app.post('/login', async (req, res) => {
 // Rota para listar propriedades
 app.get('/propriedades', authMiddleware, async (req, res) => {
   try {
-    console.log(req.userId)
     const propriedades = await Propriedade.findAll({
-      
       where: { userId: req.userId }
-    
     });
     res.json(propriedades);
   } catch (error) {
@@ -220,23 +213,44 @@ app.delete('/propriedades/:id', async(req, res) => {
 
 // Rota para adicionar uma nova propriedade
 
-// app.post('/propriedade', async (req, res) => {
-//   const {endereco, tipo, fotos, descricao,status,price} = req.body;
+app.post('/propriedade', async (req, res) => {
+  const {endereco, tipo, fotos, descricao, status, userId} = req.body;
+
+  console.error("UserId", userId)
+  console.error(endereco)
+  
+
+  if(!userId){
+    return res.status(400).json({ message: 'Usuário não autenticado' });
+  }
+
+  if (fotos && !Array.isArray(fotos)){
+    return res.status(400).json({message: 'Fotos deve ser um array de strings'})
+  }
+
+  try{
+
+    await Propriedade.create({
+      endereco,
+      tipo,
+      fotos: Array.isArray(fotos) ? fotos: [],
+      descricao,
+      status,
+      userId
+    });
+
+    res.json({ endereco, tipo, fotos, descricao, status});
+
+  }catch(error){
+    console.error('Erro ao adicionar propriedade:', error)
+    res.status(404).json({message: 'Erro ao adicionar propriedade'})
+    
+  }
 
 
-//   try{
-
-//     const propriedade = await Propriedade.create({
-      
-//     })
-
-//   }
 
 
-
-
-// })
-
+})
 
 
 
